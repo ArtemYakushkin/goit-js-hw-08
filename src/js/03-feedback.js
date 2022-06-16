@@ -1,29 +1,49 @@
 import throttle from 'lodash.throttle';
 
+let formData = {};
+const FEEDBACK = "feedback-form-state";
 const form = document.querySelector('.feedback-form');
-form.addEventListener('input', throttle(onFormData, 500));
-form.addEventListener('submit', onSubmitForm);
+const textarea = document.querySelector('.feedback-form textarea');
+const input = document.querySelector('.feedback-form input');
 
-const formData = {};
+form.addEventListener('submit', onFormSubmit);
+form.addEventListener('input', throttle(onFormInput, 500));
+onSaveMessage();
 
-function onFormData(e) {
-  formData[e.target.name] = e.target.value;
-  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
+function onFormInput(event) {
+  formData[event.target.name] = event.target.value;
+  const storage = JSON.stringify(formData);
+  localStorage.setItem(FEEDBACK, storage);
 }
 
-function onSubmitForm(e) {
-  console.log(JSON.parse(localStorage.getItem('feedback-form-state')));
-  e.preventDefault();
-  e.currentTarget.reset();
-  localStorage.removeItem('feedback-form-state');
-}
+function onFormSubmit(event) {
+  event.preventDefault();
+  event.currentTarget.reset();
+  localStorage.removeItem(FEEDBACK);
 
-(function dataFromLocalStorage() {
-  const data = JSON.parse(localStorage.getItem('feedback-form-state'));
-  const email = document.querySelector('.feedback-form input');
-  const message = document.querySelector('.feedback-form textarea');
-  if (data) {
-    email.value = data.email;
-    message.value = data.message;
+  console.log(formData);
+
+  for (const key in formData) {
+    delete formData[key];
   }
-})();
+}
+
+function onSaveMessage() {
+  const saveMessage = localStorage.getItem(FEEDBACK);
+  const save = JSON.parse(saveMessage);
+
+  if (save === null) {
+  input.value = '';
+  textarea.value = '';
+  } else if (save.email === undefined && save.message !== undefined) {
+    input.value = '';
+    textarea.value = save.message;
+  } else if (save.email !== undefined && save.message === undefined) {
+    input.value = save.email;
+    textarea.value = '';
+  } else {
+    input.value = save.email;
+    textarea.value = save.message;
+  }
+}
+
